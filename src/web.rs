@@ -6,7 +6,7 @@ use axum::{
 mod handlers;
 
 /// All Routes
-pub fn routes() -> Router<axum::body::Body> {
+pub fn routes() -> Router {
     Router::new()
         .route("/", get(handlers::root))
         .route("/graphiql", get(handlers::graphiql))
