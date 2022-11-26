@@ -12,6 +12,7 @@ use juniper::{
 use serde::Deserialize;
 use serde_json::json;
 use std::{net::SocketAddr, sync::Arc};
+use tracing::info;
 
 #[derive(Clone, Deserialize, GraphQLObject)]
 #[graphql(description = "A link")]
@@ -50,6 +51,8 @@ type Schema = RootNode<'static, Query, EmptyMutation<Ctx>, EmptySubscription<Ctx
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     let schema = Arc::new(Schema::new(
         Query {},
         EmptyMutation::new(),
@@ -60,14 +63,6 @@ async fn main() {
         data: toml::from_str(include_str!("../data.toml")).unwrap(),
     });
 
-    let req = GraphQLRequest::<juniper::DefaultScalarValue>::new(
-        String::from("query { allLinks { url } }"),
-        None,
-        None,
-    );
-    let resp = req.execute(&schema, &ctx).await;
-    println!("{:?}", resp);
-
     let app = Router::new()
         .route("/", get(root))
         .route("/graphiql", get(graphiql))
@@ -76,6 +71,7 @@ async fn main() {
         .layer(Extension(ctx));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    info!("listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
@@ -95,6 +91,7 @@ async fn graphql(
     Extension(ctx): Extension<Arc<Ctx>>,
     req: Json<GraphQLRequest>,
 ) -> impl IntoResponse {
+    info!("{:#?}", req);
     let response = req.execute(&schema, &ctx).await;
     let status = if response.is_ok() {
         StatusCode::OK
