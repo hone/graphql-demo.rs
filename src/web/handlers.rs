@@ -1,7 +1,7 @@
 use crate::model::{Ctx, Schema};
 
 use axum::{
-    extract::Extension,
+    extract::State,
     http::StatusCode,
     response::{Html, IntoResponse},
     Json,
@@ -20,8 +20,8 @@ pub async fn graphiql() -> impl IntoResponse {
 }
 
 pub async fn graphql(
-    Extension(schema): Extension<Arc<Schema>>,
-    Extension(ctx): Extension<Arc<Ctx>>,
+    State(schema): State<Arc<Schema>>,
+    State(ctx): State<Arc<Ctx>>,
     req: Json<GraphQLRequest>,
 ) -> impl IntoResponse {
     info!("{:#?}", req);

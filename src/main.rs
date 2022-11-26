@@ -1,11 +1,11 @@
-use axum::Extension;
 use juniper::{EmptyMutation, EmptySubscription};
 use std::{net::SocketAddr, sync::Arc};
 use tracing::info;
 
 mod model;
 mod web;
-use crate::model::{Ctx, Query, Schema};
+use model::{Ctx, Query, Schema};
+use web::AppState;
 
 #[tokio::main]
 async fn main() {
@@ -16,13 +16,12 @@ async fn main() {
         EmptyMutation::new(),
         EmptySubscription::new(),
     ));
-
     let ctx = Arc::new(Ctx {
         data: toml::from_str(include_str!("../data.toml")).unwrap(),
     });
+    let state = AppState { ctx, schema };
 
-    let app = web::routes().layer(Extension(schema)).layer(Extension(ctx));
-
+    let app = web::routes().with_state(state);
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     info!("listening on {}", addr);
     axum::Server::bind(&addr)
